@@ -10,6 +10,10 @@ import threading
 from queue import Queue, Empty
 from typing import Optional
 
+from .fog_client import FogClient
+
+
+
 # 获取 ComfyUI 的路径
 COMFY_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if COMFY_PATH not in sys.path:

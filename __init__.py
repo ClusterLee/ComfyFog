@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import traceback  # 导入 traceback 模块
 
 # 创建日志目录
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
@@ -32,8 +33,8 @@ logger.info("ComfyFog logger initialized")
 
 try:
     # 1. 设置Web目录
-    WEB_DIRECTORY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
-    
+    WEB_DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
+
     # 确保web目录存在
     if not os.path.exists(WEB_DIRECTORY):
         os.makedirs(WEB_DIRECTORY)
@@ -45,10 +46,11 @@ try:
     # 3. 初始化fog管理器
     fog_manager = FogManager()
 
+    logger.info("ComfyFog initialized Success")
     # 4. 导出必要的变量
     __all__ = ['WEB_DIRECTORY', 'ROUTES', 'fog_manager']
 
 except Exception as e:
     logger.error(f"Error initializing ComfyFog: {e}")
-    WEB_DIRECTORY = ""
-    ROUTES = []
+    logger.error(traceback.format_exc())  # 打印完整堆栈
+    raise  
