@@ -4,6 +4,7 @@ import time
 import threading
 import logging
 from typing import Optional
+import traceback  # 导入 traceback 模块
 from .fog_client import FogClient
 from .fog_scheduler import FogScheduler
 
@@ -91,10 +92,12 @@ class FogManager:
         def monitor_loop():
             while self.running:
                 try:
+                    logger.info(f"ComfyFog Task Process Working......")  
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()
                 except Exception as e:
                     logger.error(f"Error in monitor loop: {e}")
+                    logger.error(traceback.format_exc())  # 打印完整堆栈
                 time.sleep(5)
 
         self.monitor_thread = threading.Thread(
@@ -117,6 +120,7 @@ class FogManager:
 
     def _load_config(self):
         """加载配置文件"""
+        self.config_file = os.path.join(os.path.dirname(__file__), 'config.json')
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:

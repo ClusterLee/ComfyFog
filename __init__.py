@@ -12,12 +12,6 @@ if not os.path.exists(log_dir):
 logger = logging.getLogger('ComfyFog')
 logger.setLevel(logging.DEBUG)
 
-# 控制台处理器
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(console_formatter)
-
 # 文件处理器
 file_handler = logging.FileHandler(os.path.join(log_dir, 'comfyfog.log'))
 file_handler.setLevel(logging.DEBUG)
@@ -25,7 +19,6 @@ file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(m
 file_handler.setFormatter(file_formatter)
 
 # 添加处理器
-logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
 # 测试日志
@@ -47,8 +40,21 @@ try:
     fog_manager = FogManager()
 
     logger.info("ComfyFog initialized Success")
-    # 4. 导出必要的变量
-    __all__ = ['WEB_DIRECTORY', 'ROUTES', 'fog_manager']
+
+    # 4. 定义节点映射
+    NODE_CLASS_MAPPINGS = {
+        # "节点名称": 节点类
+        # 例如:
+        # "FogNode": FogNode
+    }
+
+    # 可选：添加节点类别映射
+    NODE_DISPLAY_NAME_MAPPINGS = {
+        # "FogNode": "Fog Node"
+    }
+
+    # 5. 导出必要的变量
+    __all__ = ['WEB_DIRECTORY', 'ROUTES', 'fog_manager', 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
 
 except Exception as e:
     logger.error(f"Error initializing ComfyFog: {e}")
