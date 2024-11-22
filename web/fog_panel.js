@@ -11,7 +11,7 @@ function loadCSS() {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.type = 'text/css';
-    link.href = './extensions/ComfyFog/web/fog_panel.css';
+    link.href = './extensions/ComfyFog/fog_panel.css';
     document.head.appendChild(link);
 }
 
@@ -51,13 +51,16 @@ app.registerExtension({
         const menuEntry = document.createElement('div');
         menuEntry.classList.add('comfy-menu-entry');
         menuEntry.innerHTML = `
-            <label>Fog Control</label>
-            <button id="fog-panel-btn">Open Panel</button>
+            <button id="fog-panel-btn">Open Fog Panel</button>
         `;
         
         // 添加到ComfyUI的菜单中
         // .comfy-menu 是ComfyUI的主菜单容器
-        const menuContainer = document.querySelector('.comfy-menu');
+        var menuContainer = document.querySelector('.comfy-menu');
+        menuContainer.appendChild(menuEntry);
+
+        // .comfy-menu 是ComfyUI的主菜单容器
+        menuContainer = document.querySelector('.comfyui-body-top .comfyui-menu-right');
         menuContainer.appendChild(menuEntry);
     },
     
