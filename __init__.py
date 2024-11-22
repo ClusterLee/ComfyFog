@@ -11,16 +11,6 @@ if not os.path.exists(log_dir):
 # 配置日志
 logger = logging.getLogger('ComfyFog')
 logger.setLevel(logging.DEBUG)
-
-# 文件处理器
-file_handler = logging.FileHandler(os.path.join(log_dir, 'comfyfog.log'))
-file_handler.setLevel(logging.DEBUG)
-file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(file_formatter)
-
-# 添加处理器
-logger.addHandler(file_handler)
-
 # 测试日志
 logger.info("ComfyFog logger initialized")
 
