@@ -1,0 +1,225 @@
+/* ===== 主题变量定义 ===== */
+/* 这些变量可以在整个样式表中复用，确保样式的一致性 */
+:root {
+    /* 面板基础尺寸 */
+    --fog-panel-width: 320px;          /* 面板宽度 */
+    --fog-panel-padding: 15px;         /* 内边距 */
+    --fog-section-margin: 15px;        /* 区块间距 */
+    --fog-border-radius: 4px;          /* 圆角大小 */
+}
+
+/* ===== 菜单入口样式 ===== */
+/* 在ComfyUI主菜单中的入口按钮样式 */
+.comfy-menu-entry {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border-color);  /* 使用ComfyUI的边框颜色 */
+}
+
+.comfy-menu-entry label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--fg-color);  /* 使用ComfyUI的文字颜色 */
+}
+
+/* ===== 控制面板基础样式 ===== */
+/* 模态框定位和基础样式 */
+#fog-control-panel.comfy-modal {
+    /* 固定定位，居中显示 */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* 使用ComfyUI的背景色和边框 */
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--fog-border-radius);
+    
+    /* 确保面板显示在其他元素之上 */
+    z-index: 1000;
+}
+
+/* 面板内容容器 */
+.comfy-modal-content {
+    width: var(--fog-panel-width);
+    padding: var(--fog-panel-padding);
+    color: var(--fg-color);
+}
+
+/* ===== 面板标题样式 ===== */
+.comfy-modal-content h4 {
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--fg-color);
+}
+
+/* ===== 状态显示区域 ===== */
+/* 显示当前运行状态和任务信息的区域 */
+.fog-status {
+    margin-bottom: var(--fog-section-margin);
+    padding: 10px;
+    background: var(--comfy-input-bg);  /* 使用ComfyUI的输入框背景色 */
+    border-radius: var(--fog-border-radius);
+}
+
+.fog-status div {
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;  /* 标签和值两端对齐 */
+}
+
+/* ===== 控制开关区域 ===== */
+.fog-controls {
+    margin-bottom: var(--fog-section-margin);
+}
+
+/* 开关按钮容器 */
+.fog-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* 复选框样式 */
+.fog-switch input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+/* ===== 调度时间设置区域 ===== */
+.fog-schedule {
+    margin-bottom: var(--fog-section-margin);
+}
+
+/* 单个时间段容器 */
+.schedule-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 5px;
+    background: var(--comfy-input-bg);
+    border-radius: var(--fog-border-radius);
+}
+
+/* 时间输入框样式 */
+.schedule-slot input[type="time"] {
+    padding: 4px;
+    background: var(--comfy-input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    color: var(--fg-color);
+}
+
+/* 删除时间段按钮 */
+.remove-slot {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: var(--error-color);  /* 使用错误状态颜色 */
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 14px;
+}
+
+.remove-slot:hover {
+    background: var(--error-color-dark);  /* 悬停时加深颜色 */
+}
+
+/* ===== 历史记录区域 ===== */
+.fog-history {
+    max-height: 200px;
+    overflow-y: auto;  /* 内容过多时显示滚动条 */
+}
+
+.fog-task-history {
+    border: 1px solid var(--border-color);
+    border-radius: var(--fog-border-radius);
+}
+
+/* 历史记录条目 */
+.history-item {
+    padding: 8px;
+    margin-bottom: 5px;
+    border-radius: var(--fog-border-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 成功完成的任务 */
+.history-item.completed {
+    background: var(--success-color);
+    color: white;
+}
+
+/* 失败的任务 */
+.history-item.failed {
+    background: var(--error-color);
+    color: white;
+}
+
+/* ===== 按钮样式 ===== */
+/* 使用ComfyUI的按钮样式 */
+.comfy-btn {
+    background: var(--comfy-button-bg);
+    color: var(--comfy-button-fg);
+    border: none;
+    padding: 8px 15px;
+    border-radius: var(--fog-border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s;  /* 平滑的颜色过渡 */
+}
+
+.comfy-btn:hover {
+    background: var(--comfy-button-bg-hover);
+}
+
+/* ===== 加载状态样式 ===== */
+/* 加载中的元素样式 */
+.loading {
+    position: relative;
+    opacity: 0.7;  /* 降低透明度表示加载状态 */
+}
+
+/* 加载动画 */
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--bg-color);
+    border-top: 2px solid var(--fg-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ===== 动画定义 ===== */
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ===== 响应式设计 ===== */
+/* 在小屏幕设备上的样式调整 */
+@media (max-width: 768px) {
+    :root {
+        --fog-panel-width: 90vw;  /* 使用视窗宽度的90% */
+    }
+    
+    /* 在小屏幕上垂直排列时间段选择器 */
+    .schedule-slot {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

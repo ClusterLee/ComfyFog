@@ -1,0 +1,14 @@
+{
+    "enabled": false,
+    "task_center_url": "http://your-task-center-url",
+    "schedule": [
+        {
+            "start": "23:00",
+            "end": "06:00"
+        }
+    ],
+    "max_tasks_per_day": 100,
+    "min_gpu_memory_available": 4000,
+    "retry_interval": 5,
+    "max_retries": 3
+}
