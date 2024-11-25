@@ -1,6 +1,6 @@
 {
     "enabled": false,
-    "task_center_url": "http://your-task-center-url",
+    "task_center_url": "https://control.comfyfog.org/schedule/task/get",
     "schedule": [
         {
             "start": "23:00",
