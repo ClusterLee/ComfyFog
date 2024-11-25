@@ -1,7 +1,7 @@
 import requests
 import logging
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util import Retry
 from typing import Optional, Dict, Any
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
