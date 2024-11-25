@@ -58,6 +58,30 @@ class FogManager:
             logger.warning("FogClient not available, scheduler initialization skipped")
             return None
         return FogScheduler(self.client)
+    
+
+    def _start_monitor_thread(self):
+        """启动监控线程"""
+        def monitor_loop():
+            while self.running:
+                try:
+                    logger.debug(f"ComfyFog Task Process Working......")  
+                    if self.scheduler and self.config.get("enabled"):
+                        self.scheduler.process_task()
+                except Exception as e:
+                    logger.error(f"Error in monitor loop: {e}")
+                    logger.error(traceback.format_exc())  # 打印完整堆栈
+                time.sleep(5)
+
+        self.monitor_thread = threading.Thread(
+            target=monitor_loop,
+            name="FogMonitor",
+            daemon=True
+        )
+        self.monitor_thread.start()
+
+
+    #  ROUTES API LIST
 
     def get_status(self):
         """获取当前状态"""
@@ -86,25 +110,7 @@ class FogManager:
                 logger.error(f"Failed to update config: {e}")
                 return {"status": "error", "message": str(e)}
 
-    def _start_monitor_thread(self):
-        """启动监控线程"""
-        def monitor_loop():
-            while self.running:
-                try:
-                    logger.debug(f"ComfyFog Task Process Working......")  
-                    if self.scheduler and self.config.get("enabled"):
-                        self.scheduler.process_task()
-                except Exception as e:
-                    logger.error(f"Error in monitor loop: {e}")
-                    logger.error(traceback.format_exc())  # 打印完整堆栈
-                time.sleep(5)
 
-        self.monitor_thread = threading.Thread(
-            target=monitor_loop,
-            name="FogMonitor",
-            daemon=True
-        )
-        self.monitor_thread.start()
 
     def __del__(self):
         """清理资源"""
