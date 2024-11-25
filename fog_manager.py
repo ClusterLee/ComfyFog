@@ -91,7 +91,7 @@ class FogManager:
         def monitor_loop():
             while self.running:
                 try:
-                    logger.info(f"ComfyFog Task Process Working......")  
+                    logger.debug(f"ComfyFog Task Process Working......")  
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()
                 except Exception as e:
