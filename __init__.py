@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 import traceback  # 导入 traceback 模块
 
