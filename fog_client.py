@@ -26,8 +26,12 @@ class FogClient:
         session = requests.Session()
         retry = Retry(
             total=3,  # 最大重试次数
-            backoff_factor=0.5,  # 重试间隔
-            status_forcelist=[500, 502, 503, 504]  # 需要重试的HTTP状态码
+            backoff_factor=5,  # 每次重试间隔5秒
+            status_forcelist=[],  # 清空状态码列表，不根据状态码重试
+            allowed_methods=None,  # 允许所有 HTTP 方法重试
+            raise_on_status=False,  # 不因状态码抛出异常
+            connect=3,  # 连接超时重试
+            read=3     # 读取超时重试
         )
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
@@ -56,8 +60,6 @@ class FogClient:
                 task = response.json()
                 logger.info(f"Received task: {task.get('id')}")
                 return task
-            elif response.status_code == 404:
-                logger.debug("No tasks available")
             else:
                 logger.warning(f"Failed to fetch task: {response.status_code}")
             return None
@@ -142,19 +144,4 @@ class FogClient:
             logger.error(f"Error submitting result: {str(e)}")
             return False
         
-    def test_connection(self) -> bool:
-        """
-        测试与任务中心的连接
-        
-        Returns:
-            bool: 连接是否成功
-        """
-        try:
-            response = self.session.get(
-                f"{self.task_center_url}/health",
-                timeout=5
-            )
-            return response.status_code == 200
-        except Exception as e:
-            logger.error(f"Connection test failed: {e}")
-            return False
+

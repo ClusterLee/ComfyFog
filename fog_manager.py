@@ -64,7 +64,6 @@ class FogManager:
         with self.lock:
             return {
                 "enabled": self.config.get("enabled", False),
-                "connected": bool(self.client and self.client.test_connection()),
                 "scheduler_active": bool(self.scheduler),
                 "current_task": self.scheduler.current_task if self.scheduler else None,
                 "schedule": self.config.get("schedule", [])
