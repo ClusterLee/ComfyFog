@@ -1,7 +1,6 @@
 import requests
 import logging
 
-
 from comfy.cli_args import args
 from server import PromptServer
 
@@ -12,6 +11,8 @@ class ComfyUIClient:
         self.prompt_server = PromptServer.instance
         self.address, self.port = self.get_server_info()
         self.scheme = "https" if self.is_tls_enabled() else "http"
+        if self.address == "0.0.0.0":
+            self.address = "127.0.0.1"
         logger.info(f"ComfyUI server running at: {self.scheme}://{self.address}:{self.port}")
         
     def get_server_info(self):
@@ -25,6 +26,8 @@ class ComfyUIClient:
             # 1. 尝试从命令行参数获取
             addresses = args.listen.split(',')
             address = addresses[0] if addresses else "127.0.0.1"
+            if address == "0.0.0.0":
+                address = "127.0.0.1"
             port = args.port
             logger.debug(f"Got server info from args: {address}:{port}")
             return address, port
@@ -95,6 +98,37 @@ class ComfyUIClient:
             logger.error(f"Error submitting workflow: {e}")
             return {"success": False, "error": str(e)}
 
+    def get_queue_status(self):
+        """获取当前队列任务状态"""
+        try:
+            url = f"{self.scheme}://{self.address}:{self.port}/prompt"
+            
+            # 发送 GET 请求
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                queue_remaining = data.get("exec_info", {}).get("queue_remaining", 0)
+                logger.info(f"当前队列剩余任务数: {queue_remaining}")
+                return {
+                    "success": True,
+                    "queue_remaining": queue_remaining
+                }
+            else:
+                error_msg = f"获取队列状态失败: HTTP {response.status_code}"
+                logger.error(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg
+                }
+                
+        except Exception as e:
+            logger.error(f"获取队列状态时发生错误: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
 # 使用示例
 def example_usage():
     client = ComfyUIClient()
@@ -129,4 +163,11 @@ def example_usage():
         print(f"Error: {result['error']}")
         if result.get('node_errors'):
             print(f"Node errors: {result['node_errors']}")
+
+    # 获取队列状态示例
+    queue_status = client.get_queue_status()
+    if queue_status["success"]:
+        print(f"当前队列中还有 {queue_status['queue_remaining']} 个任务")
+    else:
+        print(f"获取队列状态失败: {queue_status['error']}")
 

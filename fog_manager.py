@@ -31,7 +31,7 @@ class FogManager:
             self.lock = threading.Lock()
             
             # 4. 启动监控线程
-            self.running = True
+            self.running = True 
             self._start_monitor_thread()
             
             
@@ -70,6 +70,7 @@ class FogManager:
     def _start_monitor_thread(self):
         """启动监控线程"""
         def monitor_loop():
+            time.sleep(5) # 等待ComfyUI 完成加载并启动
             while self.running:
                 try:
                     logger.debug(f"ComfyFog Task Process Working......")  

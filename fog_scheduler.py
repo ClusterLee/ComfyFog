@@ -2,16 +2,16 @@ import sys
 import os
 import json
 import time
-from datetime import datetime
 import logging
 import base64
 import websocket
 import threading
-from queue import Queue, Empty
 from typing import Optional
+from datetime import datetime
+from queue import Queue, Empty
 
 from .fog_client import FogClient
-
+from .fog_comfy import ComfyUIClient
 
 
 # 获取 ComfyUI 的路径
@@ -44,6 +44,7 @@ class FogScheduler:
             raise ValueError("fog_client must be an instance of FogClient")
             
         self.fog_client = fog_client
+        self.comfy_client = ComfyUIClient()
         self.current_task: Optional[dict] = None  # 当前在处理的任务
         self.task_history = []    # 任务历史记录
         self.max_history = 100
@@ -57,22 +58,21 @@ class FogScheduler:
         
     def check_queue_status(self):
         """检查ComfyUI队列状态"""
+
         try:
-            # 直接从 PromptServer 获取队列信息
-            queue_info = PromptServer.instance.get_queue_info()
-            
-            # 更新队列状态
-            self.queue_status = {
-                "busy": queue_info["exec_info"]["queue_remaining"] > 0,
-                "tasks": queue_info["exec_info"]["queue_remaining"]
-            }
-            
-            logger.debug(f"Queue status: {self.queue_status}")
-            return not self.queue_status["busy"]
+            # 获取队列状态示例
+            queue_status = self.comfy_client.get_queue_status()
+            if queue_status["success"]:
+                logger.debug(f"当前队列中还有 {queue_status['queue_remaining']} 个任务")
+                return True;
+            else:
+                logger.error(f"获取队列状态失败: {queue_status['error']}")
+                return False    
             
         except Exception as e:
             logger.error(f"Error checking queue status: {e}")
             return False
+        
             
     def process_task(self):
         """任务处理主流程"""
@@ -100,13 +100,16 @@ class FogScheduler:
                 workflow = self.current_task.get("workflow", {})                   
                 logger.info(f"Task submitted to ComfyUI, task_id: {task_id}, workflow: {workflow}")
 
-                # 4.2 使用 PromptServer 执行任务
-                prompt_id = PromptServer.instance.prompt_queue.put(workflow)
-                if not prompt_id:
-                    raise ValueError("Failed to get prompt_id from ComfyUI")
+                # 4.2 提交任务，获取prompt_id
+    
+                result = self.comfy_client.submit_workflow(workflow, client_id="ComfyFog")
+                
+                if not result["success"]:
+                    raise Exception(result["error"])
+
                     
-                logger.info(f"Task prompt_queue success, task_id: {task_id }, prompt_id: {prompt_id}")
-                self.current_prompt_id = prompt_id
+                logger.info(f"Task prompt_queue success, task_id: {task_id }, prompt_id: {result['prompt_id']}")
+                self.current_prompt_id = result['prompt_id']
                 self.current_task_id = task_id
                 
                 # 4.2 建立WebSocket连接
@@ -342,7 +345,7 @@ class FogScheduler:
             result: 执行结果或错误信息
         """
         history_item = {
-            "task_id": task["id"],
+            "task_id": task["task_id"],
             "timestamp": datetime.now().isoformat(),
             "status": status,
             "result": result
