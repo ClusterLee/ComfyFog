@@ -3,10 +3,13 @@ import json
 import time
 import threading
 import logging
-from typing import Optional
 import traceback  # 导入 traceback 模块
+from typing import Optional
+
 from .fog_client import FogClient
+from .fog_comfy import ComfyUIClient
 from .fog_scheduler import FogScheduler
+
 
 logger = logging.getLogger('ComfyFog')
 
@@ -22,6 +25,7 @@ class FogManager:
             # 2. 初始化组件
             self.client = self._init_client()
             self.scheduler = self._init_scheduler()
+            self.comfy_client = self._init_comfy_client()
             
             # 3. 初始化线程安全锁
             self.lock = threading.Lock()
@@ -59,6 +63,9 @@ class FogManager:
             return None
         return FogScheduler(self.client)
     
+    def _init_comfy_client(self) -> Optional[ComfyUIClient]:
+        """初始化ComfyUIClient"""
+        return ComfyUIClient()
 
     def _start_monitor_thread(self):
         """启动监控线程"""

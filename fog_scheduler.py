@@ -44,7 +44,7 @@ class FogScheduler:
             raise ValueError("fog_client must be an instance of FogClient")
             
         self.fog_client = fog_client
-        self.current_task: Optional[dict] = None  # 当前���在处理的任务
+        self.current_task: Optional[dict] = None  # 当前在处理的任务
         self.task_history = []    # 任务历史记录
         self.max_history = 100
         self.queue_status = {"busy": False, "tasks": 0}
@@ -52,18 +52,19 @@ class FogScheduler:
         self.ws = None           # WebSocket连接
         self.result_queue = Queue()  # 用于存储WebSocket结果的队列
         self.current_prompt_id = None  # 当前正在执行的prompt ID
+        self.current_task_id = None  # 当前正在执行的任务ID
         self.schedule = []  # 添加调度时间列表
         
     def check_queue_status(self):
         """检查ComfyUI队列状态"""
         try:
-            # 获取当前执行队列
-            prompt_queue = PromptQueue.instance.get_current_queue()
+            # 直接从 PromptServer 获取队列信息
+            queue_info = PromptServer.instance.get_queue_info()
             
-            # 检查队列状态
+            # 更新队列状态
             self.queue_status = {
-                "busy": prompt_queue.is_running() or not prompt_queue.queue.empty(),
-                "tasks": prompt_queue.queue.qsize()
+                "busy": queue_info["exec_info"]["queue_remaining"] > 0,
+                "tasks": queue_info["exec_info"]["queue_remaining"]
             }
             
             logger.debug(f"Queue status: {self.queue_status}")
@@ -85,25 +86,28 @@ class FogScheduler:
             logger.debug("Queue is busy")
             return False
             
-        # 3. 获取新任务
-        if not self.current_task:
-            self.current_task = self.fog_client.fetch_task()
-            
+        # 3. 获取新任务        
+        self.current_task = self.fog_client.fetch_task()
+        if not self.current_task:  
+            return False
+        
         # 4. 处理任务
         if self.current_task:
+            
             try:
                 # 4.1 提交任务到ComfyUI并获取prompt_id
-                workflow = self.current_task.get("workflow", {})
-                if not workflow:
-                    raise ValueError("Empty workflow in task")
-                    
-                # 使用 PromptServer 执行任务
+                task_id = self.current_task.get("task_id", "")
+                workflow = self.current_task.get("workflow", {})                   
+                logger.info(f"Task submitted to ComfyUI, task_id: {task_id}, workflow: {workflow}")
+
+                # 4.2 使用 PromptServer 执行任务
                 prompt_id = PromptServer.instance.prompt_queue.put(workflow)
                 if not prompt_id:
                     raise ValueError("Failed to get prompt_id from ComfyUI")
                     
-                logger.info(f"Task submitted to ComfyUI, prompt_id: {prompt_id}")
+                logger.info(f"Task prompt_queue success, task_id: {task_id }, prompt_id: {prompt_id}")
                 self.current_prompt_id = prompt_id
+                self.current_task_id = task_id
                 
                 # 4.2 建立WebSocket连接
                 self._connect_websocket()
@@ -116,7 +120,7 @@ class FogScheduler:
                 
                 # 4.5 提交结果
                 submission_data = {
-                    "task_id": self.current_task["id"],
+                    "task_id": task_id,
                     "output": processed_result,
                     "status": "completed",
                     "completed_at": datetime.now().isoformat()
@@ -129,7 +133,7 @@ class FogScheduler:
             except Exception as e:
                 logger.error(f"Error processing task: {e}")
                 error_data = {
-                    "task_id": self.current_task["id"],
+                    "task_id": self.current_task_id,
                     "status": "failed",
                     "error": str(e),
                     "completed_at": datetime.now().isoformat()
@@ -319,7 +323,7 @@ class FogScheduler:
             raise
             
     def _get_image_path(self, filename):
-        """获取图片的完整��径"""
+        """获取图片的完整路径"""
         try:
             import folder_paths
             output_dir = folder_paths.get_output_directory()
@@ -383,8 +387,8 @@ class FogScheduler:
         统一的错误处理
         
         Args:
-            error: 错误信
-            task_id: 关的任务ID
+            error: 错误信息
+            task_id: 关联的任务ID
         """
         try:
             error_data = {
@@ -444,7 +448,7 @@ class FogScheduler:
             
             processed_result = {
                 "images": [],
-                "node_outputs": result  # 保��原始节点输出信息
+                "node_outputs": result  # 保留原始节点输出信息
             }
             
             # 获取ComfyUI的输出目录

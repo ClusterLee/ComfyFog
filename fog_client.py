@@ -48,20 +48,29 @@ class FogClient:
             "created_at": "2024-01-01T00:00:00Z"
         }
         """
-        logger.info(f"Fetching task from: {self.task_center_url}/task")
+        logger.debug(f"Fetching task from: {self.task_center_url}/get")
         try:
             response = self.session.get(
-                f"{self.task_center_url}/task",
+                f"{self.task_center_url}/get",
                 headers={'User-Agent': 'ComfyFog/1.0'},
                 timeout=self.timeout
             )
             
             if response.status_code == 200:
-                task = response.json()
-                logger.info(f"Received task: {task.get('id')}")
-                return task
+                try:
+                    task = response.json()
+                    if not task.get('task_id'):
+                        logger.error(f"Invalid task format - missing 'task_id' field. Response: {task}")
+                        return None
+                    if not task.get('workflow'):
+                        logger.error(f"Invalid task format - missing 'workflow' field. Response: {task}")
+                        return None
+                    return task
+                except ValueError as e:
+                    logger.error(f"Invalid JSON response: {e}. Raw response: {response.text}")
+                    return None
             else:
-                logger.warning(f"Failed to fetch task: {response.status_code}")
+                logger.error(f"Failed to fetch task: {response.status_code}, Response: {response.text}")
             return None
                 
         except Exception as e:
