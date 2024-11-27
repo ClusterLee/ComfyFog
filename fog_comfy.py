@@ -71,6 +71,7 @@ class ComfyUIClient:
                 number = data.get("number")
                 node_errors = data.get("node_errors", [])
                 
+
                 if prompt_id:
                     return {
                         "success": True,
