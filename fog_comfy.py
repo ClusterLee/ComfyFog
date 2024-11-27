@@ -9,13 +9,13 @@ logger = logging.getLogger('ComfyFog')
 class ComfyUIClient:
     def __init__(self):
         self.prompt_server = PromptServer.instance
-        self.address, self.port = self.get_server_info()
-        self.scheme = "https" if self.is_tls_enabled() else "http"
+        self.address, self.port = self._get_server_info()
+        self.scheme = "https" if self._is_tls_enabled() else "http"
         if self.address == "0.0.0.0":
             self.address = "127.0.0.1"
         logger.debug(f"ComfyUI server running at: {self.scheme}://{self.address}:{self.port}")
         
-    def get_server_info(self):
+    def _get_server_info(self):
         """获取服务器地址和端口
         优先级：
         1. 从命令行参数获取
@@ -47,7 +47,7 @@ class ComfyUIClient:
         logger.debug("Using default server info")
         return "127.0.0.1", 8188
 
-    def is_tls_enabled(self):
+    def _is_tls_enabled(self):
         """检查是否启用了 TLS"""
         return bool(args.tls_keyfile and args.tls_certfile)
 
@@ -117,6 +117,16 @@ class ComfyUIClient:
                 "success": False,
                 "error": str(e)
             }
+
+
+    def wait_workflow_result(self):
+        return
+    
+
+
+
+
+
 
 # 使用示例
 def example_usage():
