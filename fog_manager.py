@@ -23,9 +23,10 @@ class FogManager:
             self.config = self._load_config()
             
             # 2. 初始化组件
-            self.client = self._init_client()
-            self.scheduler = self._init_scheduler()
-            self.comfy_client = self._init_comfy_client()
+            self.config.get('task_center_url',"https://control.comfyfog.org/schedule/task")
+            self.client = FogClient(self.config['task_center_url'])
+            self.scheduler = FogScheduler(self.client)
+            self.comfy_client =  ComfyUIClient()
             
             # 3. 初始化线程安全锁
             self.lock = threading.Lock()
@@ -44,40 +45,18 @@ class FogManager:
             logger.error(f"FogManager initialization failed: {e}")
             self.running = False
             raise
-
-    def _init_client(self) -> Optional[FogClient]:
-        """初始化FogClient"""
-        try:
-            if not self.config.get('task_center_url'):
-                logger.warning("task_center_url not configured")
-                return None
-            return FogClient(self.config['task_center_url'])
-        except Exception as e:
-            logger.error(f"Failed to initialize FogClient: {e}")
-            return None
-
-    def _init_scheduler(self) -> Optional[FogScheduler]:
-        """初始化FogScheduler"""
-        if not self.client:
-            logger.warning("FogClient not available, scheduler initialization skipped")
-            return None
-        return FogScheduler(self.client)
-    
-    def _init_comfy_client(self) -> Optional[ComfyUIClient]:
-        """初始化ComfyUIClient"""
-        return ComfyUIClient()
-
+   
     def _start_monitor_thread(self):
         """启动监控线程"""
         def monitor_loop():
             time.sleep(5) # 等待ComfyUI 完成加载并启动
             while self.running:
                 try:
-                    logger.debug(f"ComfyFog Task Process Working......")  
+                    logger.debug(f"-------------------- ComfyFog Task Process Working Start -----------------------\n")  
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()
                 except Exception as e:
-                    logger.error(f"Error in monitor loop: {e}")
+                    logger.error(f"ComfyFog error in task loop: {e}")
                     logger.error(traceback.format_exc())  # 打印完整堆栈
                 time.sleep(5)
 
@@ -110,8 +89,9 @@ class FogManager:
                 
                 # 如果URL改变，重新初始化client
                 if 'task_center_url' in new_config:
-                    self.client = self._init_client()
-                    self.scheduler = self._init_scheduler()
+                    self.config.get('task_center_url',"https://control.comfyfog.org/schedule/task")
+                    self.client = FogClient(self.config['task_center_url'])
+                    self.scheduler = FogScheduler(self.client)
                 
                 return {"status": "success"}
             except Exception as e:

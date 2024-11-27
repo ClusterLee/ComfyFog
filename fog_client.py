@@ -60,22 +60,30 @@ class FogClient:
                 try:
                     task = response.json()
                     if not task.get('task_id'):
-                        logger.error(f"Invalid task format - missing 'task_id' field. Response: {task}")
-                        return None
+                        raise ValueError(f"Invalid task format - missing 'task_id' field. Response: {task}")
+
                     if not task.get('workflow'):
-                        logger.error(f"Invalid task format - missing 'workflow' field. Response: {task}")
-                        return None
-                    return task
+                        raise ValueError(f"Invalid task format - missing 'workflow' field. Response: {task}")
+
+                    return {
+                        "success": True,
+                        "task_id": task.get('task_id'),
+                        "workflow": task.get('workflow')
+                    }
+                
                 except ValueError as e:
-                    logger.error(f"Invalid JSON response: {e}. Raw response: {response.text}")
-                    return None
+                    raise ValueError(f"Invalid JSON response: {e}. Raw response: {response.text}")
+
             else:
-                logger.error(f"Failed to fetch task: {response.status_code}, Response: {response.text}")
-            return None
+                raise ValueError(f"Failed to fetch task: {response.status_code}, Response: {response.text}")
+            
                 
         except Exception as e:
-            logger.error(f"Error fetching task: {str(e)}")
-            return None
+            error_msg = f"Error fetching task, {str(e)}"
+            return {
+                "success": False,
+                "error": error_msg
+            }
             
     def submit_result(self, result: Dict[str, Any]) -> bool:
         """

@@ -45,34 +45,21 @@ class FogScheduler:
             
         self.fog_client = fog_client
         self.comfy_client = ComfyUIClient()
+
         self.current_task: Optional[dict] = None  # 当前在处理的任务
+        self.current_prompt_id = None  # 当前正在执行的prompt ID
+        self.current_task_id = None  # 当前正在执行的任务ID
+
         self.task_history = []    # 任务历史记录
         self.max_history = 100
 
         self.base_path = os.path.dirname(os.path.abspath(__file__))
         self.ws = None           # WebSocket连接
         self.result_queue = Queue()  # 用于存储WebSocket结果的队列
-        self.current_prompt_id = None  # 当前正在执行的prompt ID
-        self.current_task_id = None  # 当前正在执行的任务ID
+
         self.schedule = []  # 添加调度时间列表
         
-    def check_queue_status(self):
-        """检查ComfyUI队列状态"""
-
-        try:
-            # 获取队列状态示例
-            queue_status = self.comfy_client.get_queue_status()
-            if queue_status["success"]:
-                logger.debug(f"当前队列中还有 {queue_status['queue_remaining']} 个任务")
-                return True;
-            else:
-                logger.error(f"获取队列状态失败: {queue_status['error']}")
-                return False    
-            
-        except Exception as e:
-            logger.error(f"Error checking queue status: {e}")
-            return False
-        
+          
             
     def process_task(self):
         """任务处理主流程"""
@@ -82,71 +69,76 @@ class FogScheduler:
             return False
             
         # 2. 检查队列状态
-        if not self.check_queue_status():
-            logger.debug("Queue is busy")
+        queue_status = self.comfy_client.get_queue_status()
+        if  not queue_status["success"]:
+            logger.error(f"ComfyQueue status get error : {queue_status['error']}")
+            return False;
+        if queue_status["queue_remaining"]:
+            logger.info(f"ComfyQueue remaining {queue_status['queue_remaining']} task, wait next loop.")
             return False
-            
+        logger.info(f"ComfyQueue is idle, {queue_status['queue_remaining']} task, next step")
+
         # 3. 获取新任务        
         self.current_task = self.fog_client.fetch_task()
-        if not self.current_task:  
+        if not self.current_task.get("success"):  
+            logger.error(f"{self.current_task.get("error")}")
             return False
-        
+
+
         # 4. 处理任务
-        if self.current_task:
+         
+        try:
+            # 4.1 提交任务到ComfyUI并获取prompt_id
+            self.current_task_id = self.current_task.get("task_id")
+            self.current_workflow = self.current_task.get("workflow")                   
+            logger.info(f"Task submitted to ComfyUI, task_id: {self.current_task_id}, workflow: {self.current_workflow}")
+
+            result = self.comfy_client.submit_workflow(self.current_workflow, client_id="ComfyFog")
             
-            try:
-                # 4.1 提交任务到ComfyUI并获取prompt_id
-                task_id = self.current_task.get("task_id", "")
-                workflow = self.current_task.get("workflow", {})                   
-                logger.info(f"Task submitted to ComfyUI, task_id: {task_id}, workflow: {workflow}")
+            if not result["success"]:
+                raise Exception(result["error"])
+            
+            self.current_prompt_id = result['prompt_id']                
+            logger.info(f"Task prompt_queue success, task_id: {self.current_task_id }, prompt_id: {self.current_prompt_id}")
 
-                # 4.2 提交任务，获取prompt_id
-    
-                result = self.comfy_client.submit_workflow(workflow, client_id="ComfyFog")
-                
-                if not result["success"]:
-                    raise Exception(result["error"])
-
-                    
-                logger.info(f"Task prompt_queue success, task_id: {task_id }, prompt_id: {result['prompt_id']}")
-                self.current_prompt_id = result['prompt_id']
-                self.current_task_id = task_id
-                
-                # 4.2 建立WebSocket连接
-                self._connect_websocket()
-                
-                # 4.3 等待任务完成并获取结果
-                result = self._wait_for_result()
-                
-                # 4.4 处理图片文件并准备提交数据
-                processed_result = self._process_images(result)
-                
-                # 4.5 提交结果
-                submission_data = {
-                    "task_id": task_id,
-                    "output": processed_result,
-                    "status": "completed",
-                    "completed_at": datetime.now().isoformat()
-                }
-                self.fog_client.submit_result(submission_data)
-                
-                # 4.6 记录历史
-                self._record_history(self.current_task, "completed", processed_result)
-                
-            except Exception as e:
-                logger.error(f"Error processing task: {e}")
-                error_data = {
-                    "task_id": self.current_task_id,
-                    "status": "failed",
-                    "error": str(e),
-                    "completed_at": datetime.now().isoformat()
-                }
-                self.fog_client.submit_result(error_data)
-                self._record_history(self.current_task, "failed", str(e))
-                
-            finally:
-                self.current_prompt_id = None
-                self.current_task = None
+       
+            
+            # 4.2 建立WebSocket连接
+            self._connect_websocket()
+            
+            # 4.3 等待任务完成并获取结果
+            result = self._wait_for_result()
+            
+            # 4.4 处理图片文件并准备提交数据
+            processed_result = self._process_images(result)
+            
+            # 4.5 提交结果
+            submission_data = {
+                "task_id": self.current_task_id,
+                "output": processed_result,
+                "status": "completed",
+                "completed_at": datetime.now().isoformat()
+            }
+            self.fog_client.submit_result(submission_data)
+            
+            # 4.6 记录历史
+            self._record_history(self.current_task, "completed", processed_result)
+            
+        except Exception as e:
+            logger.error(f"Error processing task: {e}")
+            error_data = {
+                "task_id": self.current_task_id,
+                "status": "failed",
+                "error": str(e),
+                "completed_at": datetime.now().isoformat()
+            }
+            self.fog_client.submit_result(error_data)
+            self._record_history(self.current_task, "failed", str(e))
+            
+        finally:
+            self.current_prompt_id = None
+            self.current_task_id = None
+            self.current_task = None
 
     def _wait_for_result(self):
         """等待并收集WebSocket结果"""

@@ -79,6 +79,6 @@ try:
     __all__ = ['WEB_DIRECTORY', 'ROUTES', 'fog_manager', 'NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
 
 except Exception as e:
-    logger.error(f"Error initializing ComfyFog: {e}")
+    logger.error(f"ComfyFog Error initializing : {e}")
     logger.error(traceback.format_exc())  # 打印完整堆栈
     raise  

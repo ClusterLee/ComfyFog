@@ -13,7 +13,7 @@ class ComfyUIClient:
         self.scheme = "https" if self.is_tls_enabled() else "http"
         if self.address == "0.0.0.0":
             self.address = "127.0.0.1"
-        logger.info(f"ComfyUI server running at: {self.scheme}://{self.address}:{self.port}")
+        logger.debug(f"ComfyUI server running at: {self.scheme}://{self.address}:{self.port}")
         
     def get_server_info(self):
         """获取服务器地址和端口
@@ -42,8 +42,6 @@ class ComfyUIClient:
                 return server.address, server.port
         except Exception as e:
             logger.debug(f"Failed to get server info from PromptServer: {e}")
-
-
 
         # 3. 使用默认值
         logger.debug("Using default server info")
@@ -74,7 +72,6 @@ class ComfyUIClient:
                 node_errors = data.get("node_errors", [])
                 
                 if prompt_id:
-                    logger.info(f"Workflow submitted successfully. Prompt ID: {prompt_id}, Queue number: {number}")
                     return {
                         "success": True,
                         "prompt_id": prompt_id,
@@ -82,20 +79,12 @@ class ComfyUIClient:
                         "node_errors": node_errors
                     }
                 else:
-                    logger.error("No prompt_id in response")
-                    return {"success": False, "error": "No prompt_id in response"}
+                    raise ValueError("Failed to submit_workflow , No prompt_id in response")
                     
             else:
-                error_data = response.json()
-                logger.error(f"Failed to submit workflow: {error_data.get('error', 'Unknown error')}")
-                return {
-                    "success": False,
-                    "error": error_data.get('error', 'Unknown error'),
-                    "node_errors": error_data.get('node_errors', [])
-                }
+                raise ValueError(f"Failed to submit_workflow , {response.status_code} Response: {response.text}")
                 
         except Exception as e:
-            logger.error(f"Error submitting workflow: {e}")
             return {"success": False, "error": str(e)}
 
     def get_queue_status(self):
@@ -108,22 +97,21 @@ class ComfyUIClient:
             
             if response.status_code == 200:
                 data = response.json()
-                queue_remaining = data.get("exec_info", {}).get("queue_remaining", 0)
-                logger.info(f"当前队列剩余任务数: {queue_remaining}")
+                logger.debug(f"Get {url}, Resp: {data}");
+                queue_remaining = data.get("exec_info").get("queue_remaining")
                 return {
                     "success": True,
                     "queue_remaining": queue_remaining
                 }
             else:
-                error_msg = f"获取队列状态失败: HTTP {response.status_code}"
-                logger.error(error_msg)
+                error_msg = f"Get {url} failed,  {response.status_code}"
                 return {
                     "success": False,
                     "error": error_msg
                 }
                 
         except Exception as e:
-            logger.error(f"获取队列状态时发生错误: {e}")
+            
             return {
                 "success": False,
                 "error": str(e)
