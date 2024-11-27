@@ -79,53 +79,12 @@ def fog_update_config(req):
         logger.error(f"Error updating config: {e}")
         return {"status": "error", "message": str(e)}
 
-def fog_history(req):
-    """
-    获取任务执行历史
-    
-    请求方式：GET /fog/history
-    
-    查询参数：
-        limit: int       # 可选，返回的记录数量，默认10
-        status: str      # 可选，过滤状态：completed/failed
-    
-    Returns:
-        {
-            "history": [
-                {
-                    "task_id": str,    # 任务ID
-                    "status": str,     # 状态：completed/failed
-                    "started_at": str, # 开始时间，ISO格式
-                    "completed_at": str,# 完成时间，ISO格式
-                    "error": str       # 可选，失败原因
-                }
-            ]
-        }
-    """
-    limit = int(req.query.get('limit', 10))
-    status = req.query.get('status')
-    return {"history": fog_manager.get_history(limit, status)}
-
-def fog_clear_history(req):
-    """
-    清除任务历史
-    
-    请求方式：POST /fog/history/clear
-    
-    Returns:
-        {
-            "status": "success"
-        }
-    """
-    fog_manager.clear_history()
-    return {"status": "success"}
 
 # ComfyUI路由定义
 ROUTES = [
     ("fog/status", fog_status),                    # GET 获取状态
     ("fog/config", fog_update_config, ["POST"]),   # POST 更新配置
-    ("fog/history", fog_history),                  # GET 获取历史
-    ("fog/history/clear", fog_clear_history, ["POST"])  # POST 清除历史
+
 ]
 
 # 导出必要的变量

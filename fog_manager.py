@@ -58,7 +58,7 @@ class FogManager:
                 except Exception as e:
                     logger.error(f"ComfyFog error in task loop: {e}")
                     logger.error(traceback.format_exc())  # 打印完整堆栈
-                time.sleep(5)
+                time.sleep(1)
 
         self.monitor_thread = threading.Thread(
             target=monitor_loop,

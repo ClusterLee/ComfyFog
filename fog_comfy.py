@@ -1,5 +1,10 @@
-import requests
+import os
+import json
 import logging
+import requests
+import websocket
+import urllib.parse
+
 
 from comfy.cli_args import args
 from server import PromptServer
@@ -13,6 +18,7 @@ class ComfyUIClient:
         self.scheme = "https" if self._is_tls_enabled() else "http"
         if self.address == "0.0.0.0":
             self.address = "127.0.0.1"
+        self.client_id = "ComfyFog"
         logger.debug(f"ComfyUI server running at: {self.scheme}://{self.address}:{self.port}")
         
     def _get_server_info(self):
@@ -51,7 +57,7 @@ class ComfyUIClient:
         """检查是否启用了 TLS"""
         return bool(args.tls_keyfile and args.tls_certfile)
 
-    def submit_workflow(self, workflow, client_id=None):
+    def submit_workflow(self, workflow):
         """提交工作流到 ComfyUI"""
         try:
             url = f"{self.scheme}://{self.address}:{self.port}/prompt"
@@ -59,7 +65,7 @@ class ComfyUIClient:
             # 准备请求数据
             payload = {
                 "prompt": workflow,
-                "client_id": client_id
+                "client_id": self.client_id
             }
             
             # 发送 POST 请求
@@ -118,9 +124,67 @@ class ComfyUIClient:
                 "error": str(e)
             }
 
+    def _get_images(self, ws, prompt_id):
+        output_images = {}
 
-    def wait_workflow_result(self):
-        return
+        while True:
+            out = ws.recv()
+
+            if isinstance(out, str):
+                message = json.loads(out)
+                type = message.get('type')
+                data = message.get('data')
+
+                if type != 'crystools.monitor':
+                    logger.debug(f"Websock recv message: {out}")
+                
+                if type == 'executing':
+                    if data is None: 
+                        continue
+                    if data.get('prompt_id') != prompt_id:
+                        continue
+                    if data.get('node') is None:
+                       break  #Execution is done
+
+                if type == 'executed':
+                    if data is None: 
+                        continue
+                    if data.get('prompt_id') != prompt_id:
+                        continue
+                    output = data.get('output')
+                    if output is None:
+                        continue;                    
+                    images = output.get('images')
+                    if images is None:
+                        continue;
+                    
+                    node = data.get('node')
+                    output_images[node] = {'url':[],'file':[]}
+                    for image in images:                        
+                        url_values = urllib.parse.urlencode(image)
+                        output_images[node].get('url').append("{}://{}:{}/view?{}".format(self.scheme, self.address, self.port, url_values))
+                        import folder_paths
+                        output_dir = folder_paths.get_output_directory()
+                        output_images[node].get('file').append(os.path.join(output_dir, image.get('filename')))
+        
+        return output_images
+    
+    def wait_websock_result(self, prompt_id):
+        ws = websocket.WebSocket()
+        ws.connect("ws://{}:{}/ws?clientId={}".format(self.address, self.port, self.client_id))
+        images = self._get_images(ws, prompt_id)
+        ws.close() 
+        # for in case this example is used in an environment where it will be repeatedly called, like in a Gradio app. otherwise, you'll randomly receive connection timeouts
+        #Commented out code to display the output images:
+
+        # for node_id in images:
+        #     for image_data in images[node_id]:
+        #         from PIL import Image
+        #         import io
+        #         image = Image.open(io.BytesIO(image_data))
+        #         image.show()
+    
+        return images
     
 
 
