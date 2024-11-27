@@ -48,7 +48,7 @@ class FogScheduler:
         self.current_task: Optional[dict] = None  # 当前在处理的任务
         self.task_history = []    # 任务历史记录
         self.max_history = 100
-        self.queue_status = {"busy": False, "tasks": 0}
+
         self.base_path = os.path.dirname(os.path.abspath(__file__))
         self.ws = None           # WebSocket连接
         self.result_queue = Queue()  # 用于存储WebSocket结果的队列
