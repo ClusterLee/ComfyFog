@@ -88,10 +88,10 @@ class ComfyUIClient:
                         "node_errors": node_errors
                     }
                 else:
-                    raise ValueError("Failed to submit_workflow , No prompt_id in response")
+                    raise Exception("Failed to submit_workflow , No prompt_id in response")
                     
             else:
-                raise ValueError(f"Failed to submit_workflow , {response.status_code} Response: {response.text}")
+                raise Exception(f"Failed to submit_workflow , {response.status_code} Response: {response.text}")
                 
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -137,7 +137,7 @@ class ComfyUIClient:
 
             # 检查是否超时
             if time.time() - start_time > timeout:
-                raise ValueError("Timeout reached while waiting for images.")
+                raise Exception("Timeout reached while waiting for images.")
 
             if isinstance(out, str):
                 message = json.loads(out)
@@ -179,11 +179,23 @@ class ComfyUIClient:
         return output_images
     
     def wait_websock_result(self, prompt_id):
-        ws = websocket.WebSocket()
-        ws.connect("ws://{}:{}/ws?clientId={}".format(self.address, self.port, self.client_id))
-        images = self._get_images(ws, prompt_id)
-        ws.close() 
-        return images
+        try:
+            ws = websocket.WebSocket()
+            ws.connect("ws://{}:{}/ws?clientId={}".format(self.address, self.port, self.client_id))
+            images = self._get_images(ws, prompt_id)
+            ws.close() 
+
+            return {
+                "success": True,
+                "images": images
+            }
+        
+        except Exception as e:
+            
+            return {
+                "success": False,
+                "error": str(e)
+            }
     
 
 

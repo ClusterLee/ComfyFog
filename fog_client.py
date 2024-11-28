@@ -1,10 +1,13 @@
-import requests
 import logging
-from requests.adapters import HTTPAdapter
+import requests
+import traceback  
+import urllib.parse
+
+from datetime import datetime
 from urllib3.util import Retry
 from typing import Optional, Dict, Any
-from datetime import datetime
-from urllib.parse import urlparse, urljoin
+from requests.adapters import HTTPAdapter
+
 
 logger = logging.getLogger('ComfyFog')
 
@@ -16,7 +19,7 @@ class FogClient:
     def __init__(self, task_center_url: str):
         self.task_center_url = task_center_url
         self.session = self._create_session()
-        self.timeout = 10  # 添加默认超时时间
+        self.timeout = 15  # 添加默认超时时间
         
     def _create_session(self):
         """
@@ -25,13 +28,13 @@ class FogClient:
         """
         session = requests.Session()
         retry = Retry(
-            total=3,  # 最大重试次数
+            total=2,  # 最大重试次数
             backoff_factor=5,  # 每次重试间隔5秒
             status_forcelist=[],  # 清空状态码列表，不根据状态码重试
             allowed_methods=None,  # 允许所有 HTTP 方法重试
             raise_on_status=False,  # 不因状态码抛出异常
-            connect=3,  # 连接超时重试
-            read=3     # 读取超时重试
+            connect=5,  # 连接超时重试
+            read=10     # 读取超时重试
         )
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
@@ -60,10 +63,10 @@ class FogClient:
                 try:
                     task = response.json()
                     if not task.get('task_id'):
-                        raise ValueError(f"Invalid task format - missing 'task_id' field. Response: {task}")
+                        raise Exception(f"Invalid task format - missing 'task_id' field. Response: {task}")
 
                     if not task.get('workflow'):
-                        raise ValueError(f"Invalid task format - missing 'workflow' field. Response: {task}")
+                        raise Exception(f"Invalid task format - missing 'workflow' field. Response: {task}")
 
                     return {
                         "success": True,
@@ -72,10 +75,10 @@ class FogClient:
                     }
                 
                 except ValueError as e:
-                    raise ValueError(f"Invalid JSON response: {e}. Raw response: {response.text}")
+                    raise Exception(f"Invalid JSON response: {e}. Raw response: {response.text}")
 
             else:
-                raise ValueError(f"Failed to fetch task: {response.status_code}, Response: {response.text}")
+                raise Exception(f"Failed to fetch task: {response.status_code}, Response: {response.text}")
             
                 
         except Exception as e:
@@ -84,81 +87,60 @@ class FogClient:
                 "success": False,
                 "error": error_msg
             }
-            
-    def submit_result(self, result: Dict[str, Any]) -> bool:
-        """
-        提交任务结果到任务中心
+    
+    """
+    
+    Inputs: images:{'9': {'url': ['http://127.0.0.1:8188/view?filename=ComfyUI_01209_.png&subfolder=&type=output'], 'file': ['/data/home/clusterli/ComfyUI/output/ComfyUI_01209_.png']}}
+    Resp: 
+    """
+    def upload_images(self, meta:Dict[str, Any], images: Dict[str, Any], resp: Dict[str, Any]) -> bool:
+       
+        # 初始化返回
+        ret = True
+        for node, details in images.items():
+            files = details.get('file', [])
+            resp[node] = []
+            for index,file in enumerate(files):
+                resp[node].append({"success": False, "file":file, "error": ""})
         
-        预期API: POST /result
-        
-        Args:
-            result (Dict[str, Any]): 结果数据，格式如下:
-            {
-                "task_id": str,          # 任务ID
-                "status": str,           # 状态: "completed" 或 "failed"
-                "completed_at": str,     # 完成时间，ISO格式
-                "images": [              # 生成的图片列表
-                    {
-                        "data": str,     # base64编码的图片数据
-                        "filename": str,  # 图片文件名
-                        "node_id": str,  # 生成该图片的节点ID
-                        "type": str      # 图片类型，如 "output"
-                    }
-                ],
-                "node_outputs": {        # ComfyUI节点输出数据
-                    "node_id": {         # 节点ID
-                        "images": [      # 该节点生成的图片信息
-                            {
-                                "filename": str,
-                                "subfolder": str,
-                                "type": str
-                            }
-                        ],
-                        # ... 其他节点特定输出
-                    }
-                },
-                "error": str            # 可选，失败时的错误信息
-            }
-            
-        Returns:
-            bool: 提交是否成功
-            
-        Raises:
-            ValueError: 结果数据格式无效
-        """
-        # 验证必要字段
-        required_fields = ['task_id', 'status']
-        if not all(field in result for field in required_fields):
-            raise ValueError(f"Missing required fields: {required_fields}")
-            
-        # 验证状态值
-        if result['status'] not in ['completed', 'failed']:
-            raise ValueError("Invalid status value")
-            
-        # 确保completed_at存在且格式正确
-        if 'completed_at' not in result:
-            result['completed_at'] = datetime.now().isoformat()
-            
-        try:
-            response = self.session.post(
-                urljoin(self.task_center_url, 'result'),
-                json=result,
-                timeout=self.timeout
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"Result submitted for task: {result['task_id']}")
-                return True
-            else:
-                logger.warning(
-                    f"Failed to submit result: {response.status_code}, "
-                    f"task_id: {result['task_id']}, "
-                    f"status: {result['status']}"
-                )
-                return False
-                
-        except Exception as e:
-            logger.error(f"Error submitting result: {str(e)}")
-            return False
-        
+
+
+        task_post_url = "{}/upload?{}".format(self.task_center_url, urllib.parse.urlencode(meta))
+        # 遍历 images 字典
+        for node, details in images.items():
+
+            files = details.get('file', [])
+                  
+            for index,file in enumerate(files):
+                post_url = "{}&node={}&index={}".format(task_post_url, node, index)
+                logger.debug(f"submit post url {post_url}")
+
+                try:
+                    # 上传本地生成文件
+                    with open(file, 'rb') as f:
+                        response = self.session.post(
+                            f"{post_url}",  
+                            headers={'User-Agent': 'ComfyFog/1.0'},
+                            files={'file': f},  
+                            timeout=self.timeout
+                        )
+
+                        # 检查响应状态
+                        if response.status_code == 200:
+                            # 获取响应内容
+                            response_data = response.json()  # 假设返回的是 JSON 格式
+                            logger.debug(f"File {file} uploaded successfully. Response: {response_data}")
+                            resp[node][index] = {"success":True ,"file":file}
+                        else:
+                            raise Exception(f"Failed to upload {file}. Status code: {response.status_code}")
+                            
+
+                except Exception as e:
+                    ret = False
+                    err_msg = (f"Error upload image: {str(e)}")
+                    resp[node][index] = {"success":False, "file":file, "error": err_msg }
+
+        return ret
+
+
 

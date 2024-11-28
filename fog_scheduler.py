@@ -60,7 +60,7 @@ class FogScheduler:
     def process_task(self):
         """任务处理主流程"""
         # 1. 检查是否在调度时间内
-        if not self.is_in_schedule():
+        if not self._is_in_schedule():
             logger.debug("Not in scheduled time")
             return False
             
@@ -82,7 +82,7 @@ class FogScheduler:
 
 
         # 4. 处理任务
-         
+        self.task_start_time = time.time();
         try:
             # 4.1 提交任务到ComfyUI并获取prompt_id
             self.current_task_id = self.current_task.get("task_id")
@@ -99,37 +99,32 @@ class FogScheduler:
 
             
             # 4.2 等待任务完成并获取结果
-            images = self.comfy_client.wait_websock_result(self.current_prompt_id)            
-            logger.debug(f"Task completed ,  task_id: {self.current_task_id }, prompt_id: {self.current_prompt_id}, image:{images}")
+            result = self.comfy_client.wait_websock_result(self.current_prompt_id)            
+            logger.debug(f"Task interface completed ,  task_id: {self.current_task_id }, prompt_id: {self.current_prompt_id}, resp:{result}")
+            if not result["success"]:
+                raise Exception(result["error"])
+            images = result["images"]
+            
+            # 4.3 上传图片以及相关meta信息, 失败进队列，后续可重试
+   
+            meta = {};
+            meta["task_id"] = self.current_task_id
+            meta["start_at"] = self.task_start_time
+            meta["end_at"] = time.time();
+            
+            resp = {}
+            ret = self.fog_client.upload_images(meta, images, resp)
+            if not ret :
+                logger.error(f"Task upload error ,  task_id: {self.current_task_id }, prompt_id: {self.current_prompt_id}, resp:{resp}")
+            else:
+                logger.info(f"Task upload success ,  task_id: {self.current_task_id }, prompt_id: {self.current_prompt_id}, resp:{resp}")
  
-
-            """
-            # 4.3 处理图片文件并准备提交数据
-            processed_result = self._process_images(result)
-            
-            # 4.4 提交结果
-            submission_data = {
-                "task_id": self.current_task_id,
-                "output": processed_result,
-                "status": "completed",
-                "completed_at": datetime.now().isoformat()
-            }
-            self.fog_client.submit_result(submission_data)
-            
-    
-            """
+        
 
         except Exception as e:
             logger.error(f"ComyFog processing loop error: {e}")
-            logger.error(traceback.format_exc())  # 打印完整堆栈
-            error_data = {
-                "task_id": self.current_task_id,
-                "status": "failed",
-                "error": str(e),
-                "completed_at": datetime.now().isoformat()
-            }
-            self.fog_client.submit_result(error_data)
-            self._record_history(self.current_task, "failed", str(e))
+            logger.error(traceback.format_exc())  
+ 
             
         finally:
             self.current_prompt_id = None
@@ -138,52 +133,7 @@ class FogScheduler:
 
 
 
-    def _process_images(self, result):
-        """处理结果中的图片文件"""
-        try:
-            import folder_paths  # ComfyUI的路径处理模块
-            
-            processed_result = {
-                "images": [],
-                "node_outputs": result  # 保留原始节点输出信息
-            }
-            
-            # 获取ComfyUI的输出目录
-            output_dir = folder_paths.get_output_directory()
-            
-            # 遍历所有节点的输出
-            for node_id, node_output in result.items():
-                if "images" in node_output:
-                    for img_info in node_output["images"]:
-                        # 构建完整的图片路径
-                        subfolder = img_info.get("subfolder", "")
-                        filename = img_info["filename"]
-                        image_path = os.path.join(output_dir, subfolder, filename)
-                        
-                        if os.path.exists(image_path):
-                            # 读取图片文件并转换为base64
-                            with open(image_path, "rb") as img_file:
-                                img_data = base64.b64encode(img_file.read()).decode()
-                                
-                                # 添加到处理后的结果中
-                                processed_result["images"].append({
-                                    "data": img_data,
-                                    "filename": filename,
-                                    "node_id": node_id,
-                                    "type": img_info.get("type", "output")
-                                })
-                                
-                            logger.info(f"Processed image {filename} from node {node_id}")
-                        else:
-                            logger.warning(f"Image file not found: {image_path}")
-            
-            return processed_result
-            
-        except Exception as e:
-            logger.error(f"Error processing images: {e}")
-            raise
-
-    def is_in_schedule(self) -> bool:
+    def _is_in_schedule(self) -> bool:
         """检查当前时间是否在调度时间内"""
         if not self.schedule:
             return True  # 没有设置调度时间时默认允许执行
