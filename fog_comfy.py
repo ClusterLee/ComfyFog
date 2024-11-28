@@ -1,9 +1,11 @@
 import os
 import json
+import time
 import logging
 import requests
 import websocket
 import urllib.parse
+
 
 
 from comfy.cli_args import args
@@ -124,11 +126,18 @@ class ComfyUIClient:
                 "error": str(e)
             }
 
-    def _get_images(self, ws, prompt_id):
+    def _get_images(self, ws, prompt_id, timeout=300):
+        
         output_images = {}
+
+        start_time = time.time()  # 记录开始时间
 
         while True:
             out = ws.recv()
+
+            # 检查是否超时
+            if time.time() - start_time > timeout:
+                raise ValueError("Timeout reached while waiting for images.")
 
             if isinstance(out, str):
                 message = json.loads(out)
@@ -174,16 +183,6 @@ class ComfyUIClient:
         ws.connect("ws://{}:{}/ws?clientId={}".format(self.address, self.port, self.client_id))
         images = self._get_images(ws, prompt_id)
         ws.close() 
-        # for in case this example is used in an environment where it will be repeatedly called, like in a Gradio app. otherwise, you'll randomly receive connection timeouts
-        #Commented out code to display the output images:
-
-        # for node_id in images:
-        #     for image_data in images[node_id]:
-        #         from PIL import Image
-        #         import io
-        #         image = Image.open(io.BytesIO(image_data))
-        #         image.show()
-    
         return images
     
 
