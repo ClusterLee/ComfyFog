@@ -2,6 +2,7 @@ import logging
 import requests
 import traceback  
 import urllib.parse
+import os
 
 from datetime import datetime
 from urllib3.util import Retry
@@ -19,7 +20,7 @@ class FogClient:
     def __init__(self, task_center_url: str):
         self.task_center_url = task_center_url
         self.session = self._create_session()
-        self.timeout = 15  # 添加默认超时时间
+        self.timeout = 30  # 添加默认超时时间
         
     def _create_session(self):
         """
@@ -34,7 +35,7 @@ class FogClient:
             allowed_methods=None,  # 允许所有 HTTP 方法重试
             raise_on_status=False,  # 不因状态码抛出异常
             connect=5,  # 连接超时重试
-            read=10     # 读取超时重试
+            read=30     # 读取超时重试
         )
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
@@ -118,10 +119,14 @@ class FogClient:
                 try:
                     # 上传本地生成文件
                     with open(file, 'rb') as f:
+                        file_data = f.read()  # 读取文件内容
                         response = self.session.post(
-                            f"{post_url}",  
-                            headers={'User-Agent': 'ComfyFog/1.0'},
-                            files={'file': f},  
+                            f"{post_url}",
+                            headers={
+                                'User-Agent': 'ComfyFog/1.0',
+                                'Content-Type': 'application/octet-stream'  # 设置内容类型
+                            },
+                            data=file_data,  # 直接发送文件内容
                             timeout=self.timeout
                         )
 
@@ -130,7 +135,16 @@ class FogClient:
                             # 获取响应内容
                             response_data = response.json()  # 假设返回的是 JSON 格式
                             logger.debug(f"File {file} uploaded successfully. Response: {response_data}")
-                            resp[node][index] = {"success":True ,"file":file}
+                            
+                            # 在 resp 中记录上传成功的状态
+                            resp[node][index] = {"success": True, "file": file}
+                            
+                            # 删除本地文件
+                            try:
+                                os.remove(file)  # 删除本地文件
+                                logger.debug(f"Local file {file} deleted successfully.")
+                            except OSError as e:
+                                logger.error(f"Error deleting file {file}: {e}")
                         else:
                             raise Exception(f"Failed to upload {file}. Status code: {response.status_code}")
                             
