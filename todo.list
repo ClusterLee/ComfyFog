@@ -1,7 +1,16 @@
---doing
-基本业务流程
-upload_image 失败记录，重试逻辑
+--doing 基本业务流程
+
+-schdelue模块：upload_image接口
+失败记录，重试逻辑
+一次任务多图存储方式
+
+-schdelue模块：get接口
+
+
 
 --todo
-更多workflow类型的支持， 图生图，多图
-workflow适配检测、插件、Lora、模型的一键安装
+
+-更多workflow类型的支持， 图生图，多图
+
+-workflow适配检测、插件、Lora、模型的一键安装
+节点信息状态上报：GPU、插件、模型各种情况

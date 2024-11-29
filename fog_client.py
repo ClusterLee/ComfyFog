@@ -72,7 +72,8 @@ class FogClient:
                     return {
                         "success": True,
                         "task_id": task.get('task_id'),
-                        "workflow": task.get('workflow')
+                        "workflow": task.get('workflow'),
+                        "create_at": task.get('create_at')
                     }
                 
                 except ValueError as e:

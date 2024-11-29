@@ -82,12 +82,13 @@ class FogScheduler:
 
 
         # 4. 处理任务
-        self.task_start_time = time.time();
+        self.task_start_time = int(time.time())
         try:
             # 4.1 提交任务到ComfyUI并获取prompt_id
             self.current_task_id = self.current_task.get("task_id")
-            self.current_workflow = self.current_task.get("workflow")                   
-            logger.debug(f"Task submitted to ComfyUI, task_id: {self.current_task_id}, workflow: {self.current_workflow}")
+            self.current_workflow = self.current_task.get("workflow")
+                              
+            logger.debug(f"Task submitted to ComfyUI, task_id: {self.current_task_id}, workflow: {self.current_workflow}, create_at: {self.current_task.get("create_at")}")
 
             result = self.comfy_client.submit_workflow(self.current_workflow)
             
@@ -109,8 +110,14 @@ class FogScheduler:
    
             meta = {};
             meta["task_id"] = self.current_task_id
+            meta["create_at"] = self.current_task.get("create_at")
             meta["start_at"] = self.task_start_time
-            meta["end_at"] = time.time();
+            meta["end_at"] = int(time.time())
+            meta["images_idx"] = ""         #多图索引
+            for node, details in images.items():
+                files = details.get('file', [])
+                for index,file in enumerate(files):
+                    meta["images_idx"] += (f"/{node}/{index},")
             
             resp = {}
             ret = self.fog_client.upload_images(meta, images, resp)
