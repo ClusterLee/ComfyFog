@@ -1,14 +1,17 @@
---doing 基本业务流程
+****** doing 基本业务流程 *****
 
--schdelue模块：upload_image接口
-失败记录，重试逻辑
-一次任务多图存储方式
+一、schdelue模块：upload_image接口
 
--schdelue模块：get接口
+# 一次任务多图存储方式
+
+-任务上传队列，失败记录，重试逻辑 
+-推理&图片上传分离，降低GPU空闲率
+
+二、schdelue模块：get接口
 
 
 
---todo
+***********  todo   **********
 
 -更多workflow类型的支持， 图生图，多图
 
