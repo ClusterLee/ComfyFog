@@ -110,9 +110,7 @@ class FogClient:
         task_post_url = "{}/upload?{}".format(self.task_center_url, urllib.parse.urlencode(meta))
         # 遍历 images 字典
         for node, details in images.items():
-
-            files = details.get('file', [])
-                  
+            files = details.get('file', [])                  
             for index,file in enumerate(files):
                 post_url = "{}&node={}&index={}".format(task_post_url, node, index)
                 logger.debug(f"submit post url {post_url}")
@@ -136,7 +134,9 @@ class FogClient:
                             # 获取响应内容
                             response_data = response.json()  # 假设返回的是 JSON 格式
                             logger.debug(f"File {file} uploaded successfully. Response: {response_data}")
-                            
+                            if response_data.get("status") != "success":
+                                raise Exception(f"response from server {response_data}")
+
                             # 在 resp 中记录上传成功的状态
                             resp[node][index] = {"success": True, "file": file}
                             
