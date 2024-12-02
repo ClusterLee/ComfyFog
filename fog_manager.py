@@ -53,6 +53,7 @@ class FogManager:
             while self.running:
                 try:
                     logger.debug(f"-------------------- ComfyFog Task Process Working Start -----------------------\n")  
+                    self.config = self._load_config()
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()
                 except Exception as e:

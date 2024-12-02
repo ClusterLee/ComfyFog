@@ -1,5 +1,5 @@
 {
-    "enabled": true,
+    "enabled": false,
     "task_center_url": "https://control.comfyfog.org/schedule/task",
     "schedule": [
         {
