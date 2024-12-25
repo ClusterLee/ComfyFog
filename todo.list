@@ -1,20 +1,47 @@
-****** doing 基本业务流程 *****
-
-一、schdelue模块：upload_image接口
-
-# 一次任务多图存储方式
-
--任务上传/推理分离， 独立队列，失败记录，重试逻辑
--推理&图片上传分离，降低GPU空闲率
--任务多次失败后，的异常处理逻辑，避免累计
-
-二、schdelue模块：get接口
 
 
 
-***********  todo   **********
+一、Comfog插件模块
 
--更多workflow类型的支持， 图生图，多图
+1. 【fog_sechdelue推理管理】
+-[优化] 任务上传/推理分离，提升GPu利用率，独立队列，失败记录，重试逻辑
+-[优化] 任务多次失败后，的异常处理逻辑，避免累积
 
--workflow适配检测、插件、Lora、模型的一键安装
-节点信息状态上报：GPU、插件、模型各种情况
+2. 【fog_model模型管理】
+-[功能] model远程加载 & 缓存 & 多租户 https://senjianlu.com/2024/10/20/linux_s3fs_cloudflare_r2_disk/
+
+3. 【fog_status状态管理】
+-[功能] Workflow适配检测、插件、Lora、模型的一键安装
+-[功能] 节点信息状态上报：GPU、插件、模型各种情况
+
+
+二、任务schdelue模块
+
+1.【upload_image接口】
+
+
+2.【get接口】
+
+
+3.【status接口】
+
+
+
+
+三、用户API模块
+
+1.【View接口】
+
+
+2.【Workflow接口】
+
+-[create] 创建一个 workflow模板，输入参数模板、输出参数模板
+-[submit] 提交一次推理任务
+
+
+3.【Model接口】
+
+-[upload]
+
+
+
