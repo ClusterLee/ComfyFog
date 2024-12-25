@@ -1,21 +1,21 @@
 
+ComfyFog Workflow 托管平台
 
-
-一、Comfog插件模块
+一、客户端：Comfog插件模块
 
 1. 【fog_sechdelue推理管理】
 -[优化] 任务上传/推理分离，提升GPu利用率，独立队列，失败记录，重试逻辑
 -[优化] 任务多次失败后，的异常处理逻辑，避免累积
 
 2. 【fog_model模型管理】
--[功能] model远程加载 & 缓存 & 多租户 https://senjianlu.com/2024/10/20/linux_s3fs_cloudflare_r2_disk/
+-[功能] model远程加载 & 缓存配置 & 多租户 https://senjianlu.com/2024/10/20/linux_s3fs_cloudflare_r2_disk/ , https://blog.csdn.net/weixin_70208651/article/details/144218863
 
 3. 【fog_status状态管理】
 -[功能] Workflow适配检测、插件、Lora、模型的一键安装
--[功能] 节点信息状态上报：GPU、插件、模型各种情况
+-[功能] 节点GPU、插件、模型各种情况上报
 
 
-二、任务schdelue模块
+二、服务端：任务schdelue模块
 
 1.【upload_image接口】
 
@@ -28,7 +28,7 @@
 
 
 
-三、用户API模块
+三、服务端：用户API模块
 
 1.【View接口】
 
