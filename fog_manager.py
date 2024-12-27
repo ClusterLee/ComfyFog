@@ -6,9 +6,11 @@ import logging
 import traceback  # 导入 traceback 模块
 from typing import Optional
 
+from .fog_model import FogModel
 from .fog_client import FogClient
 from .fog_comfy import ComfyUIClient
 from .fog_scheduler import FogScheduler
+
 
 
 logger = logging.getLogger('ComfyFog')
@@ -27,6 +29,7 @@ class FogManager:
             self.client = FogClient(self.config['task_center_url'])
             self.scheduler = FogScheduler(self.client)
             self.comfy_client =  ComfyUIClient()
+            self.model = FogModel();
             
             # 3. 初始化线程安全锁
             self.lock = threading.Lock()
@@ -53,6 +56,9 @@ class FogManager:
             while self.running:
                 try:
                     logger.debug(f"-------------------- ComfyFog Task Process Working Start -----------------------\n")  
+                    
+                    self.model.get_folder_paths_info();
+
                     self.config = self._load_config()
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()

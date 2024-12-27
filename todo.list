@@ -1,7 +1,7 @@
 
 ComfyFog Workflow 托管平台
 
-一、客户端：Comfog插件模块
+一、客户端：Comfog插件模块 
 
 1. 【fog_sechdelue推理管理】
 -[优化] 任务上传/推理分离，提升GPu利用率，独立队列，失败记录，重试逻辑
