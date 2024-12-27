@@ -44,6 +44,21 @@ def mount_s3_bucket(bucket_name, endpoint, mount_point, cahce_point):
     "      For example, when the disk space is 50GB, the default value will\n"
     "      ensure that the disk will reserve at least 50GB * 10%% = 5GB of\n"
     "      remaining space.\n"
+    "   max_stat_cache_size (default=\"100,000\" entries (about 40MB))\n"
+    "      - maximum number of entries in the stat cache, and this maximum is\n"
+    "        also treated as the number of symbolic link cache.\n"
+    "\n"
+    "   stat_cache_expire (default is 900))\n"
+    "      - specify expire time (seconds) for entries in the stat cache.\n"
+    "        This expire time indicates the time since stat cached. and this\n"
+    "        is also set to the expire time of the symbolic link cache.\n"
+    "\n"
+    "   stat_cache_interval_expire (default is 900)\n"
+    "      - specify expire time (seconds) for entries in the stat cache(and\n"
+    "        symbolic link cache).\n"
+    "      This expire time is based on the time from the last access time\n"
+    "      of the stat cache. This option is exclusive with stat_cache_expire,\n"
+    "      and is left for compatibility with older versions.\n"
 
     subprocess.run([
         "s3fs", bucket_name, mount_point,
@@ -51,7 +66,8 @@ def mount_s3_bucket(bucket_name, endpoint, mount_point, cahce_point):
         "-o", f"url={endpoint}",
         "-o", "use_path_request_style",
         "-o", f"use_cache={cahce_point}",
-        "-o", "ensure_diskfree=2048"   # 20GB剩余空间
+        "-o", "ensure_diskfree=2048",   # 20GB剩余空间
+        "-o", "stat_cache_interval_expire=86400000" #1000天过期
 
     ], check=True)
 
