@@ -8,15 +8,11 @@ logger = logging.getLogger('ComfyFog')
 class FogModel:
     def __init__(self):
          
-        # 添加ComfyFog 额外模型目录，通常为远程目录，本地comfyui模型目录优先
+        # 添加ComfyFog 额外模型目录 comfyfog/models，通常为远程目录，本地comfyui模型目录优先
         
-        try:
-            self._add_model_folder_path("checkpoints")
-            self._add_model_folder_path("controlnet")
-            self._add_model_folder_path("loras")
-
-        except Exception as e:
-            logger.error(f"Failed to init FogModel: {e}")        
+        self._add_model_folder_path("checkpoints")
+        self._add_model_folder_path("controlnet")
+        self._add_model_folder_path("loras")
 
         return
     
