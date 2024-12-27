@@ -1,4 +1,5 @@
 logs/
 models/
 __pycache__/
+script/.passwd-s3fs
 task_history.json

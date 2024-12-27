@@ -9,6 +9,7 @@ ComfyFog Workflow 托管平台
 
 2. 【fog_model模型管理】
 -[功能] model远程加载 & 缓存配置 & 多租户 https://senjianlu.com/2024/10/20/linux_s3fs_cloudflare_r2_disk/ , https://blog.csdn.net/weixin_70208651/article/details/144218863
+-[功能] s3fs 是否有缓存淘汰机制？
 
 3. 【fog_status状态管理】
 -[功能] Workflow适配检测、插件、Lora、模型的一键安装
