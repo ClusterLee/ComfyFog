@@ -109,6 +109,10 @@ class FogScheduler:
                 }
             }
             """
+            miss_nodes = self.comfy_client.validate_node(self.current_workflow)
+            if len(miss_nodes):     
+                raise Exception(f"Invalid workflow, missing nodes {miss_nodes}")
+                            
             valid = self.comfy_client.validate_prompt(self.current_workflow)
             if not valid[0]:
                 logger.error(f"Invalid workflow, {valid}")          

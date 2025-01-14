@@ -196,7 +196,22 @@ class ComfyUIClient:
                 "success": False,
                 "error": str(e)
             }
-        
+
+    def validate_node(self, prompt):
+        import nodes
+        miss_nodes = list()
+        for id in prompt:
+            if 'class_type' not in prompt[id]:
+                continue
+
+            class_type = prompt[id]['class_type']
+            class_ = nodes.NODE_CLASS_MAPPINGS.get(class_type, None)
+            if class_ is None:
+                miss_nodes.append(class_type)
+
+        return miss_nodes
+
+
     def validate_prompt(self, prompt):
         import execution
         return execution.validate_prompt(prompt)
