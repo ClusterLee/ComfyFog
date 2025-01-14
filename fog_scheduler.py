@@ -88,10 +88,30 @@ class FogScheduler:
             self.current_task_id = self.current_task.get("task_id")
             self.current_workflow = self.current_task.get("workflow")
 
-            # workflow 校验并上报 缺失插件 或 模型
+            # workflow 校验并上报 缺失插件 或 模型, 校验返回    valid[3]
+            """
+            {
+                '4': {
+                    'errors': [{
+                        'type': 'value_not_in_list',
+                        'message': 'Value not in list',
+                        'details': "ckpt_name: 'v1-5-pruned-emaonly-fp16.safetensors' not in []",
+                        'extra_info': {
+                            'input_name': 'ckpt_name',
+                            'input_config': ([], {
+                                'tooltip': 'The name of the checkpoint (model) to load.'
+                            }),
+                            'received_value': 'v1-5-pruned-emaonly-fp16.safetensors'
+                        }
+                    }],
+                    'dependent_outputs': ['9'],
+                    'class_type': 'CheckpointLoaderSimple'
+                }
+            }
+            """
             valid = self.comfy_client.validate_prompt(self.current_workflow)
             if not valid[0]:
-                logger.error(f"Invalid workflow, {valid}")
+                logger.error(f"Invalid workflow, {valid}")          
                 raise Exception("Invalid workflow: {}".format(valid[1]))
                               
             logger.debug(f"Task submitted to ComfyUI, task_id: {self.current_task_id}, workflow: {self.current_workflow}, create_at: {self.current_task.get("create_at")}")
