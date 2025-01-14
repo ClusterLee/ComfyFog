@@ -87,6 +87,12 @@ class FogScheduler:
             # 4.1 提交任务到ComfyUI并获取prompt_id
             self.current_task_id = self.current_task.get("task_id")
             self.current_workflow = self.current_task.get("workflow")
+
+            # workflow 校验并上报 缺失插件 或 模型
+            valid = self.comfy_client.validate_prompt(self.current_workflow)
+            if not valid[0]:
+                logger.error(f"Invalid workflow, {valid}")
+                raise Exception("Invalid workflow: {}".format(valid[1]))
                               
             logger.debug(f"Task submitted to ComfyUI, task_id: {self.current_task_id}, workflow: {self.current_workflow}, create_at: {self.current_task.get("create_at")}")
 

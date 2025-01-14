@@ -196,8 +196,10 @@ class ComfyUIClient:
                 "success": False,
                 "error": str(e)
             }
-    
-
+        
+    def validate_prompt(self, prompt):
+        import execution
+        return execution.validate_prompt(prompt)
 
 
 

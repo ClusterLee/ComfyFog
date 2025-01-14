@@ -7,7 +7,7 @@ ComfyFog Workflow 托管平台
 -[优化] 任务上传/推理分离，提升GPu利用率，独立队列，失败记录，重试逻辑
 -[优化] 任务多次失败后，的异常处理逻辑，避免累积
 
-2. 【fog_model模型管理】
+2. 【fog_model模型管理】 （动态管理：Lora模型 ，静态管理：底模sdxl\flux等）
 -[功能] model远程加载 & 缓存配置 & 多租户 https://senjianlu.com/2024/10/20/linux_s3fs_cloudflare_r2_disk/ , https://blog.csdn.net/weixin_70208651/article/details/144218863
 -[功能] s3fs 是否有缓存淘汰机制？
 

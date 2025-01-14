@@ -59,9 +59,12 @@ class FogManager:
                     
                     self.model.get_folder_paths_info();
 
-                    self.config = self._load_config()
+                    self.config = self._load_config() 
+
                     if self.scheduler and self.config.get("enabled"):
                         self.scheduler.process_task()
+
+
                 except Exception as e:
                     logger.error(f"ComfyFog error in task loop: {e}")
                     logger.error(traceback.format_exc())  # 打印完整堆栈
